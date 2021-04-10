@@ -85,12 +85,12 @@ import axios from 'axios'
 const BASE_URL = 'https://api.example.com'
 
 // 1. Create an axios instance that you wish to apply the interceptor to
-export const apiClient = axios.create({ baseURL: BASE_URL })
+export const axiosInstance = axios.create({ baseURL: BASE_URL })
 
 // 2. Define token refresh function.
 const requestRefresh: TokenRefreshRequest = async (refreshToken: string): Promise<string> => {
 
-  // Important! Do NOT use the axios instance that you supplied to applyAuthTokenInterceptor (in our case 'apiClient')
+  // Important! Do NOT use the axios instance that you supplied to applyAuthTokenInterceptor (in our case 'axiosInstance')
   // because this will result in an infinite loop when trying to refresh the token.
   // Use the global axios client or a different instance
   const response = await axios.post(`${BASE_URL}/auth/refresh_token`, { token: refreshToken })
@@ -99,7 +99,7 @@ const requestRefresh: TokenRefreshRequest = async (refreshToken: string): Promis
 }
 
 // 3. Add interceptor to your axios instance
-applyAuthTokenInterceptor(apiClient, { requestRefresh })
+applyAuthTokenInterceptor(axiosInstance, { requestRefresh })
 ```
 
 ### Login/logout
@@ -108,11 +108,11 @@ applyAuthTokenInterceptor(apiClient, { requestRefresh })
 // login.ts
 
 import { isLoggedIn, setAuthTokens, clearAuthTokens, getAccessToken, getRefreshToken } from 'axios-jwt'
-import { apiClient } from '../apiClient'
+import { axiosInstance } from './api'
 
 // 4. Post email and password and get tokens in return. Call setAuthTokens with the result.
 const login = async (params: ILoginRequest) => {
-  const response = await apiClient.post('/auth/login', params)
+  const response = await axiosInstance.post('/auth/login', params)
 
   // save tokens to storage
   await setAuthTokens({
@@ -137,7 +137,7 @@ const refreshToken = getRefreshToken().then(refreshToken => console.log(refreshT
 ## Configuration
 
 ```typescript
-applyAuthTokenInterceptor(apiClient, {
+applyAuthTokenInterceptor(axiosInstance, {
   requestRefresh,  // async function that takes a refreshToken and returns a promise the resolves in a fresh accessToken
   header = "Authorization",  // header name
   headerPrefix = "Bearer ",  // header value prefix
@@ -157,22 +157,22 @@ import axios from 'axios';
 const BASE_URL = 'https://api.example.com'
 
 // 1. Create an axios instance that you wish to apply the interceptor to
-const apiClient = axios.create({ baseURL: BASE_URL })
+const axiosInstance = axios.create({ baseURL: BASE_URL })
 
 // 2. Define token refresh function.
 const requestRefresh = async (refresh) => {
-    // Notice that this is the global axios instance, not the apiClient!
+    // Notice that this is the global axios instance, not the axiosInstance!
     const response = await axios.post(`${BASE_URL}/auth/refresh_token`, { refresh })
 
     return response.data.access_token
 };
 
 // 3. Apply interceptor
-applyAuthTokenInterceptor(apiClient, { requestRefresh });  // Notice that this uses the apiClient instance.
+applyAuthTokenInterceptor(axiosInstance, { requestRefresh });  // Notice that this uses the axiosInstance instance.
 
 // 4. Logging in
 const login = async (params) => {
-  const response = await apiClient.post('/auth/login', params)
+  const response = await axiosInstance.post('/auth/login', params)
 
   // save tokens to storage
   await setAuthTokens({
@@ -184,7 +184,7 @@ const login = async (params) => {
 // 5. Logging out
 const logout = async () => await clearAuthTokens()
 
-// Now just make all requests using your apiClient instance
-apiClient.get('/api/endpoint/that/requires/login').then(response => { })
+// Now just make all requests using your axiosInstance instance
+axiosInstance.get('/api/endpoint/that/requires/login').then(response => { })
 
 ```
