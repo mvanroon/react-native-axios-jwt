@@ -1,4 +1,4 @@
-# axios-jwt
+# react-native-axios-jwt
 
 Store, clear, transmit and automatically refresh JWT authentication tokens in a React Native environment.
 
