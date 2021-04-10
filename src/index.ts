@@ -182,10 +182,16 @@ const refreshToken = async (requestRefresh: TokenRefreshRequest): Promise<Token>
 
   try {
     // Refresh and store access token using the supplied refresh function
-    const newToken = await requestRefresh(refreshToken)
-    await setAccessToken(newToken)
+    const newTokens = await requestRefresh(refreshToken)
+    if (typeof newTokens === 'object' && newTokens?.accessToken) {
+      await setAuthTokens(newTokens)
+      return newTokens.accessToken
+    } else if (typeof newTokens === 'string') {
+      await setAccessToken(newTokens)
+      return newTokens
+    }
 
-    return newToken
+    throw new Error('requestRefresh must either return a string or an object with an accessToken')
   } catch (error) {
     // Failed to refresh token
     const status = error?.response?.status
@@ -200,7 +206,7 @@ const refreshToken = async (requestRefresh: TokenRefreshRequest): Promise<Token>
   }
 }
 
-export type TokenRefreshRequest = (refreshToken: string) => Promise<Token>
+export type TokenRefreshRequest = (refreshToken: string) => Promise<Token | AuthTokens>
 
 export interface AuthTokenInterceptorConfig {
   header?: string
