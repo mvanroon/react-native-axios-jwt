@@ -188,7 +188,7 @@ describe('refreshTokenIfNeeded', () => {
     const tokens = { accessToken: expiredToken, refreshToken: 'refreshtoken' }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens))
 
-    // and I have a requestRefresh function that returns an access token
+    // and I have a requestRefresh function that returns both tokens
     const requestRefresh = async () => ({ accessToken: 'newaccesstoken', refreshToken: 'newrefreshtoken' })
 
     // WHEN
