@@ -204,7 +204,7 @@ describe('refreshTokenIfNeeded', () => {
     expect(result).toEqual('newaccesstoken')
   })
 
-  it('thrown an error if requestRefresh returns an invalid response', async () => {
+  it('throws an error if requestRefresh returns an invalid response', async () => {
     // GIVEN
     // I have an access token that expired an hour ago
     const expiredToken = jwt.sign(
