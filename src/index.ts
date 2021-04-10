@@ -8,7 +8,7 @@ const EXPIRE_FUDGE = 10
 export const STORAGE_KEY = `auth-tokens-${process.env.NODE_ENV}`
 
 type Token = string
-export interface IAuthTokens {
+export interface AuthTokens {
   accessToken: Token
   refreshToken: Token
 }
@@ -28,10 +28,10 @@ export const isLoggedIn = async (): Promise<boolean> => {
 /**
  * Sets the access and refresh tokens
  * @async
- * @param {IAuthTokens} tokens - Access and Refresh tokens
+ * @param {AuthTokens} tokens - Access and Refresh tokens
  * @returns {Promise}
  */
-export const setAuthTokens = (tokens: IAuthTokens): Promise<void> =>
+export const setAuthTokens = (tokens: AuthTokens): Promise<void> =>
   AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tokens))
 
 /**
@@ -105,9 +105,9 @@ export const refreshTokenIfNeeded = async (requestRefresh: TokenRefreshRequest):
 /**
  *
  * @param {Axios} axios - Axios instance to apply the interceptor to
- * @param {IAuthTokenInterceptorConfig} config - Configuration for the interceptor
+ * @param {AuthTokenInterceptorConfig} config - Configuration for the interceptor
  */
-export const applyAuthTokenInterceptor = (axios: AxiosInstance, config: IAuthTokenInterceptorConfig): void => {
+export const applyAuthTokenInterceptor = (axios: AxiosInstance, config: AuthTokenInterceptorConfig): void => {
   if (!axios.interceptors) throw new Error(`invalid axios instance: ${axios}`)
   axios.interceptors.request.use(authTokenInterceptor(config))
 }
@@ -117,9 +117,9 @@ export const applyAuthTokenInterceptor = (axios: AxiosInstance, config: IAuthTok
 /**
  *  Returns the refresh and access tokens
  * @async
- * @returns {Promise<IAuthTokens>} Object containing refresh and access tokens
+ * @returns {Promise<AuthTokens>} Object containing refresh and access tokens
  */
-const getAuthTokens = async (): Promise<IAuthTokens | undefined> => {
+const getAuthTokens = async (): Promise<AuthTokens | undefined> => {
   const rawTokens = await AsyncStorage.getItem(STORAGE_KEY)
   if (!rawTokens) return
 
@@ -202,7 +202,7 @@ const refreshToken = async (requestRefresh: TokenRefreshRequest): Promise<Token>
 
 export type TokenRefreshRequest = (refreshToken: string) => Promise<Token>
 
-export interface IAuthTokenInterceptorConfig {
+export interface AuthTokenInterceptorConfig {
   header?: string
   headerPrefix?: string
   requestRefresh: TokenRefreshRequest
@@ -214,14 +214,14 @@ export interface IAuthTokenInterceptorConfig {
  * - Refreshes the access token when needed
  * - Puts subsequent requests in a queue and executes them in order after the access token has been refreshed.
  *
- * @param {IAuthTokenInterceptorConfig} config - Configuration for the interceptor
+ * @param {AuthTokenInterceptorConfig} config - Configuration for the interceptor
  * @returns {Promise<AxiosRequestConfig} Promise that resolves in the supplied requestConfig
  */
 export const authTokenInterceptor = ({
   header = 'Authorization',
   headerPrefix = 'Bearer ',
   requestRefresh,
-}: IAuthTokenInterceptorConfig) => async (requestConfig: AxiosRequestConfig): Promise<AxiosRequestConfig> => {
+}: AuthTokenInterceptorConfig) => async (requestConfig: AxiosRequestConfig): Promise<AxiosRequestConfig> => {
   // We need refresh token to do any authenticated requests
   const refreshToken = await getRefreshToken()
   if (!refreshToken) return requestConfig
