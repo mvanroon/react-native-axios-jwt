@@ -6,11 +6,11 @@
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mvanroon/react-native-axios-jwt"
+    "url": "git+https://github.com/mvanroon/react-native-axios-jwt.git"
   },
   "homepage": "https://github.com/mvanroon/react-native-axios-jwt",
   "author": "Michiel van Roon",
-  "license": "WTFPL",
+  "license": "MIT",
   "devDependencies": {
     "@react-native-async-storage/async-storage": "^1.15.2",
     "@types/jest": "^26.0.22",
@@ -50,5 +50,11 @@
     "header",
     "typescript",
     "ts"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/mvanroon/react-native-axios-jwt/issues"
+  },
+  "directories": {
+    "test": "tests"
+  }
 }
