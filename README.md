@@ -4,6 +4,16 @@ Store, clear, transmit and automatically refresh JWT authentication tokens in a 
 
 Looking for a web alternative? Check out [axios-jwt](https://github.com/jetbridge/axios-jwt)
 
+## What does it do?
+
+Applies a request interceptor to your axios instance.
+
+The interceptor automatically adds an access token header (default: `Authorization`) to all requests.
+It stores `accessToken` and `refreshToken` in `AsyncStorage` and reads them when needed.
+
+It parses the expiration time of your access token and checks to see if it is expired before every request. If it has expired, a request to
+refresh and store a new access token is automatically performed before the request proceeds.
+
 ## Installation
 
 ### 1. Install async-storage
@@ -57,16 +67,6 @@ With Yarn:
 ```bash
 yarn add react-native-axios-jwt
 ```
-
-## What does it do?
-
-Applies a request interceptor to your axios instance.
-
-The interceptor automatically adds an access token header (default: `Authorization`) to all requests.
-It stores `accessToken` and `refreshToken` in `AsyncStorage` and reads them when needed.
-
-It parses the expiration time of your access token and checks to see if it is expired before every request. If it has expired, a request to
-refresh and store a new access token is automatically performed before the request proceeds.
 
 ## How do I use it?
 
