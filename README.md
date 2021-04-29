@@ -2,6 +2,8 @@
 
 Store, clear, transmit and automatically refresh JWT authentication tokens in a React Native environment.
 
+Looking for a web alternative? Check out [axios-jwt](https://github.com/jetbridge/axios-jwt)
+
 ## Installation
 
 ### 1. Install async-storage
