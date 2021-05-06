@@ -31,7 +31,7 @@ describe('refreshTokenIfNeeded', () => {
 
     // THEN
     // I expect the error handler to have been called with the right error
-    expect(catchFn).toHaveBeenLastCalledWith(new Error('Failed to refresh auth token: Server error'))
+    expect(catchFn).toHaveBeenLastCalledWith(new Error('Server error'))
   })
 
   it('throws an error and clears the storage if the requestRefresh function throws an error with a 401 status code', async () => {
