@@ -161,7 +161,7 @@ import axios from "axios";
 const BASE_URL = 'https://api.example.com'
 
 // 1. Create an axios instance that you wish to apply the interceptor to
-const axiosInstance = axios.create({ baseURL: BASE_URL })
+export const axiosInstance = axios.create({ baseURL: BASE_URL })
 
 // 2. Define token refresh function.
 const requestRefresh = async (refresh) => {
