@@ -5,3 +5,5 @@ npm-debug.log
 yarn-error.log
 dist/
 coverage/
+.history/
+.github/

@@ -153,8 +153,10 @@ applyAuthTokenInterceptor(axiosInstance, {
 ## Non-TypeScript implementation
 
 ```javascript
-import { applyAuthTokenInterceptor } from 'react-native-axios-jwt';
-import axios from 'axios';
+//api.js
+
+import { applyAuthTokenInterceptor } from "react-native-axios-jwt";
+import axios from "axios";
 
 const BASE_URL = 'https://api.example.com'
 
@@ -171,20 +173,43 @@ const requestRefresh = async (refresh) => {
 
 // 3. Apply interceptor
 applyAuthTokenInterceptor(axiosInstance, { requestRefresh });  // Notice that this uses the axiosInstance instance.
+```
+### Login/logout
 
-// 4. Logging in
+```javascript
+//login.js
+
+import {
+  isLoggedIn,
+  setAuthTokens,
+  clearAuthTokens,
+  getAccessToken,
+  getRefreshToken,
+} from "react-native-axios-jwt";
+import {axiosInstance} from "../api";
+
 const login = async (params) => {
   const response = await axiosInstance.post('/auth/login', params)
 
   // save tokens to storage
-  await setAuthTokens({
+    await setAuthTokens({
     accessToken: response.data.access_token,
     refreshToken: response.data.refresh_token
   })
 }
 
-// 5. Logging out
-const logout = async () => await clearAuthTokens()
+// 5. Clear the auth tokens from AsyncStorage
+const logout = () => clearAuthTokens()
+
+// Check if refresh token exists
+if (isLoggedIn()) {
+  // assume we are logged in because we have a refresh token
+}
+
+// Get access to tokens
+const accessToken = getAccessToken().then(accessToken => console.log(accessToken))
+const refreshToken = getRefreshToken().then(refreshToken => console.log(refreshToken))
+
 
 // Now just make all requests using your axiosInstance instance
 axiosInstance.get('/api/endpoint/that/requires/login').then(response => { })
