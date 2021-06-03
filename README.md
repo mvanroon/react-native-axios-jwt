@@ -188,7 +188,8 @@ import {
 } from 'react-native-axios-jwt';
 import { axiosInstance } from '../api';
 
-// 4. Post email and password and get tokens in return. Call setAuthTokens with the result.
+// 4. Log in by POST-ing the email and password and get tokens in return
+// and call setAuthTokens with the result.
 const login = async (params) => {
   const response = await axiosInstance.post('/auth/login', params)
 
