@@ -81,7 +81,7 @@ yarn add react-native-axios-jwt
 ```typescript
 // api.ts
 
-import { IAuthTokens, TokenRefreshRequest, applyAuthTokenInterceptor } from 'axios-jwt'
+import { IAuthTokens, TokenRefreshRequest, applyAuthTokenInterceptor } from 'react-native-axios-jwt'
 import axios from 'axios'
 
 const BASE_URL = 'https://api.example.com'
@@ -92,7 +92,7 @@ export const axiosInstance = axios.create({ baseURL: BASE_URL })
 // 2. Define token refresh function.
 const requestRefresh: TokenRefreshRequest = async (refreshToken: string): Promise<string> => {
 
-  // Important! Do NOT use the axios instance that you supplied to applyAuthTokenInterceptor (in our case 'axiosInstance')
+  // Important! Do NOT use the axios instance that you supplied to applyAuthTokenInterceptor
   // because this will result in an infinite loop when trying to refresh the token.
   // Use the global axios client or a different instance
   const response = await axios.post(`${BASE_URL}/auth/refresh_token`, { token: refreshToken })
@@ -109,10 +109,11 @@ applyAuthTokenInterceptor(axiosInstance, { requestRefresh })
 ```typescript
 // login.ts
 
-import { isLoggedIn, setAuthTokens, clearAuthTokens, getAccessToken, getRefreshToken } from 'axios-jwt'
+import { isLoggedIn, setAuthTokens, clearAuthTokens, getAccessToken, getRefreshToken } from 'react-native-axios-jwt'
 import { axiosInstance } from './api'
 
-// 4. Post email and password and get tokens in return. Call setAuthTokens with the result.
+// 4. Log in by POST-ing the email and password and get tokens in return
+// and call setAuthTokens with the result.
 const login = async (params: ILoginRequest) => {
   const response = await axiosInstance.post('/auth/login', params)
 
@@ -123,7 +124,7 @@ const login = async (params: ILoginRequest) => {
   })
 }
 
-// 5. Clear the auth tokens from AsyncStorage
+// 5. Log out by clearing the auth tokens from AsyncStorage
 const logout = () => clearAuthTokens()
 
 // Check if refresh token exists
@@ -170,7 +171,8 @@ const requestRefresh = async (refresh) => {
 };
 
 // 3. Apply interceptor
-applyAuthTokenInterceptor(axiosInstance, { requestRefresh });  // Notice that this uses the axiosInstance instance.
+// Notice that this uses the axiosInstance instance.
+applyAuthTokenInterceptor(axiosInstance, { requestRefresh });
 
 // 4. Logging in
 const login = async (params) => {
