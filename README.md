@@ -155,8 +155,8 @@ applyAuthTokenInterceptor(axiosInstance, {
 ```javascript
 //api.js
 
-import { applyAuthTokenInterceptor } from "react-native-axios-jwt";
-import axios from "axios";
+import { applyAuthTokenInterceptor } from 'react-native-axios-jwt';
+import axios from 'axios';
 
 const BASE_URL = 'https://api.example.com'
 
@@ -185,9 +185,10 @@ import {
   clearAuthTokens,
   getAccessToken,
   getRefreshToken,
-} from "react-native-axios-jwt";
-import {axiosInstance} from "../api";
+} from 'react-native-axios-jwt';
+import { axiosInstance } from '../api';
 
+// 4. Post email and password and get tokens in return. Call setAuthTokens with the result.
 const login = async (params) => {
   const response = await axiosInstance.post('/auth/login', params)
 
