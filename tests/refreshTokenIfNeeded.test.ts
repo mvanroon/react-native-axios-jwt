@@ -232,9 +232,7 @@ describe('refreshTokenIfNeeded', () => {
     // THEN
     // I expect the error handler to have been called with the right error
     expect(errorHandler).toHaveBeenLastCalledWith(
-      new Error(
-        'Failed to refresh auth token: requestRefresh must either return a string or an object with an accessToken'
-      )
+      new Error('requestRefresh must either return a string or an object with an accessToken')
     )
   })
 })

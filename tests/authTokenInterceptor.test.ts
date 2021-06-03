@@ -118,8 +118,7 @@ describe('authTokenInterceptor', () => {
 
     // THEN
     // I expect the error handler to have been called to have an updated header
-    const errorMsg =
-      'Unable to refresh access token for request due to token refresh error: Failed to refresh auth token: Example error'
+    const errorMsg = 'Unable to refresh access token for request due to token refresh error: Example error'
     expect(catchFn).toHaveBeenCalledWith(new Error(errorMsg))
   })
 
