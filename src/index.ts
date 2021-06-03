@@ -201,7 +201,7 @@ const refreshToken = async (requestRefresh: TokenRefreshRequest): Promise<Token>
       throw new Error(`Got ${status} on token refresh; clearing both auth tokens`)
     } else {
       // A different error, probably network error
-      throw new Error(error)
+      throw error
     }
   }
 }
