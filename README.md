@@ -199,7 +199,7 @@ const login = async (params) => {
   })
 }
 
-// 5. Clear the auth tokens from AsyncStorage
+// 5. Log out by clearing the auth tokens from AsyncStorage
 const logout = () => clearAuthTokens()
 
 // Check if refresh token exists
