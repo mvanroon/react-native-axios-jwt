@@ -1,4 +1,4 @@
-import jwtDecode from 'jwt-decode'
+import jwtDecode, { JwtPayload } from 'jwt-decode'
 
 import { AxiosInstance, AxiosRequestConfig } from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -151,7 +151,7 @@ const isTokenExpired = (token: Token): boolean => {
  * @returns {string} Unix timestamp
  */
 const getTimestampFromToken = (token: Token): number | undefined => {
-  const decoded = jwtDecode(token) as { [key: string]: number }
+  const decoded = jwtDecode<JwtPayload>(token)
 
   return decoded.exp
 }
@@ -269,6 +269,24 @@ type RequestsQueue = {
 
 let isRefreshing = false
 let queue: RequestsQueue = []
+
+/**
+ * Check if tokens are currently being refreshed
+ *
+ * @returns {boolean} True if the tokens are currently being refreshed, false is not
+ */
+export function getIsRefreshing(): boolean {
+  return isRefreshing
+}
+
+/**
+ * Update refresh state
+ *
+ * @param {boolean} newRefreshingState
+ */
+export function setIsRefreshing(newRefreshingState: boolean): void {
+  isRefreshing = newRefreshingState
+}
 
 /**
  * Function that resolves all items in the queue with the provided token
