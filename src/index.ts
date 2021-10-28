@@ -254,10 +254,10 @@ export const authTokenInterceptor = ({
     declineQueue(error as Error)
 
     if (error instanceof Error) {
-      throw new Error(`Unable to refresh access token for request due to token refresh error: ${error.message}`)
-    } else {
-      throw error
+      error.message = `Unable to refresh access token for request due to token refresh error: ${error.message}`
     }
+
+    throw error
   } finally {
     isRefreshing = false
   }
