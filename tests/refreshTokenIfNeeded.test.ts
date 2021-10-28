@@ -1,5 +1,8 @@
-import { STORAGE_KEY, refreshTokenIfNeeded } from '../src'
 import jwt from 'jsonwebtoken'
+import axios from 'axios'
+import MockAdapter from 'axios-mock-adapter'
+
+import { STORAGE_KEY, refreshTokenIfNeeded, AuthTokens } from '../src'
 
 describe('refreshTokenIfNeeded', () => {
   it('throws an error if the requestRefresh function threw one', async () => {
@@ -34,83 +37,55 @@ describe('refreshTokenIfNeeded', () => {
     expect(catchFn).toHaveBeenLastCalledWith(new Error('Server error'))
   })
 
-  it('throws an error and clears the storage if the requestRefresh function throws an error with a 401 status code', async () => {
-    // GIVEN
-    // I have an access token that expired an hour ago
-    const expiredToken = jwt.sign(
-      {
-        exp: Math.floor(Date.now() / 1000) - 60 * 60,
-        data: 'foobar',
-      },
-      'secret'
-    )
+  it.each([[401], [422]])(
+    'throws an error and clears the storage if the requestRefresh function throws an error with a %s status code',
+    async (statusCode) => {
+      // GIVEN
+      // I have an access token that expired an hour ago
+      const expiredToken = jwt.sign(
+        {
+          exp: Math.floor(Date.now() / 1000) - 60 * 60,
+          data: 'foobar',
+        },
+        'secret'
+      )
 
-    // and this token is stored in local storage
-    const tokens = { accessToken: expiredToken, refreshToken: 'refreshtoken' }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens))
+      // and this token is stored in local storage
+      const tokens = { accessToken: expiredToken, refreshToken: 'refreshtoken' }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens))
 
-    // and I have a requestRefresh function that throws an error
-    const requestRefresh = async () => {
-      const error: any = new Error('Server error')
-      error.response = {
-        status: 401,
+      // and API requests are mocked
+      const mock = new MockAdapter(axios)
+      mock.onAny().reply(statusCode)
+
+      // and I have a requestRefresh function that throws an error
+      const requestRefresh = async (refreshToken: string): Promise<AuthTokens> => {
+        const response = await axios.post('auth/refresh', {
+          refresh: refreshToken,
+        })
+
+        return {
+          accessToken: response.data.access,
+          refreshToken: response.data.refresh,
+        }
       }
 
-      throw error
+      // and I have an error handler
+      const catchFn = jest.fn()
+
+      // WHEN
+      // I call refreshTokenIfNeeded
+      await refreshTokenIfNeeded(requestRefresh).catch(catchFn)
+
+      // THEN
+      // I expect the error handler to have been called with the right error
+      expect(catchFn).toHaveBeenLastCalledWith(
+        new Error(`Got ${statusCode} on token refresh; clearing both auth tokens`)
+      )
+      // and the storage to have been cleared
+      expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
     }
-
-    // and I have an error handler
-    const catchFn = jest.fn()
-
-    // WHEN
-    // I call refreshTokenIfNeeded
-    await refreshTokenIfNeeded(requestRefresh).catch(catchFn)
-
-    // THEN
-    // I expect the error handler to have been called with the right error
-    expect(catchFn).toHaveBeenLastCalledWith(new Error('Got 401 on token refresh; clearing both auth tokens'))
-    // and the storage to have been cleared
-    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
-  })
-
-  it('throws an error and clears the storage if the requestRefresh function throws an error with a 422 status code', async () => {
-    // GIVEN
-    // I have an access token that expired an hour ago
-    const expiredToken = jwt.sign(
-      {
-        exp: Math.floor(Date.now() / 1000) - 60 * 60,
-        data: 'foobar',
-      },
-      'secret'
-    )
-
-    // and this token is stored in local storage
-    const tokens = { accessToken: expiredToken, refreshToken: 'refreshtoken' }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens))
-
-    // and I have a requestRefresh function that throws an error
-    const requestRefresh = async () => {
-      const error: any = new Error('Server error')
-      error.response = {
-        status: 422,
-      }
-
-      throw error
-    }
-
-    // and I have an error handler
-    const catchFn = jest.fn()
-
-    // WHEN
-    // I call refreshTokenIfNeeded
-    await refreshTokenIfNeeded(requestRefresh).catch(catchFn)
-
-    // THEN
-    // I expect the error handler to have been called with the right error
-    expect(catchFn).toHaveBeenLastCalledWith(new Error('Got 422 on token refresh; clearing both auth tokens'))
-    // and the storage to have been cleared
-    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
-  })
+  )
 
   it('refreshes the access token if it does not have an expiration', async () => {
     // GIVEN

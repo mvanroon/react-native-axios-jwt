@@ -1,6 +1,6 @@
 import jwtDecode, { JwtPayload } from 'jwt-decode'
 
-import { AxiosInstance, AxiosRequestConfig } from 'axios'
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 // a little time before expiration to try refresh (seconds)
@@ -127,8 +127,7 @@ const getAuthTokens = async (): Promise<AuthTokens | undefined> => {
     // parse stored tokens JSON
     return JSON.parse(rawTokens)
   } catch (error) {
-    error.message = `Failed to parse auth tokens: ${rawTokens}`
-    throw error
+    throw new Error(`Failed to parse auth tokens: ${rawTokens}`)
   }
 }
 
@@ -193,8 +192,10 @@ const refreshToken = async (requestRefresh: TokenRefreshRequest): Promise<Token>
 
     throw new Error('requestRefresh must either return a string or an object with an accessToken')
   } catch (error) {
+    if (!axios.isAxiosError(error)) throw error
+
     // Failed to refresh token
-    const status = error?.response?.status
+    const status = error.response?.status
     if (status === 401 || status === 422) {
       // The refresh token is invalid so remove the stored tokens
       await AsyncStorage.removeItem(STORAGE_KEY)
@@ -251,8 +252,13 @@ export const authTokenInterceptor = ({
     accessToken = await refreshTokenIfNeeded(requestRefresh)
     resolveQueue(accessToken)
   } catch (error) {
-    declineQueue(error)
-    throw new Error(`Unable to refresh access token for request due to token refresh error: ${error.message}`)
+    declineQueue(error as Error)
+
+    if (error instanceof Error) {
+      throw new Error(`Unable to refresh access token for request due to token refresh error: ${error.message}`)
+    } else {
+      throw error
+    }
   } finally {
     isRefreshing = false
   }
