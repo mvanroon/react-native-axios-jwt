@@ -199,11 +199,10 @@ const refreshToken = async (requestRefresh: TokenRefreshRequest): Promise<Token>
     if (status === 401 || status === 422) {
       // The refresh token is invalid so remove the stored tokens
       await AsyncStorage.removeItem(STORAGE_KEY)
-      throw new Error(`Got ${status} on token refresh; clearing both auth tokens`)
-    } else {
-      // A different error, probably network error
-      throw error
+      error.message = `Got ${status} on token refresh; clearing both auth tokens`
     }
+
+    throw error
   }
 }
 
