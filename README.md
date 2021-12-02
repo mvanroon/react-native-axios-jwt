@@ -9,52 +9,14 @@ Looking for a web alternative? Check out [axios-jwt](https://github.com/jetbridg
 Applies a request interceptor to your axios instance.
 
 The interceptor automatically adds an access token header (default: `Authorization`) to all requests.
-It stores `accessToken` and `refreshToken` in `AsyncStorage` and reads them when needed.
+It stores `accessToken` and `refreshToken` in `Keychain/Keystore` and reads them when needed.
 
 It parses the expiration time of your access token and checks to see if it is expired before every request. If it has expired, a request to
 refresh and store a new access token is automatically performed before the request proceeds.
 
 ## Installation
 
-### 1. Install async-storage
-
-#### Install package
-
-With npm:
-
-```bash
-npm install @react-native-async-storage/async-storage
-```
-
-With Yarn:
-
-```bash
-yarn add @react-native-async-storage/async-storage
-```
-
-With Expo CLI:
-
-```bash
-expo install @react-native-async-storage/async-storage
-```
-
-#### Link Android & iOS packages
-
-- **React Native 0.60+**
-
-```bash
-npx pod-install
-```
-
-- **React Native <= 0.59**
-
-```bash
-react-native link @react-native-async-storage/async-storage
-```
-
-Please follow the [async-storage installation instructions](https://react-native-async-storage.github.io/async-storage/docs/install/) if you encounter any problems while installing async-storage
-
-### 2. Install this library
+### 1. Install package
 
 With npm:
 
@@ -67,6 +29,22 @@ With Yarn:
 ```bash
 yarn add react-native-axios-jwt
 ```
+
+### 2. Link Android & iOS packages
+
+- **React Native 0.60+**
+
+```bash
+npx pod-install
+```
+
+- **React Native <= 0.59**
+
+```bash
+react-native link react-native-keychain
+```
+
+Please follow the [react-native-keychain installation instructions](https://github.com/oblador/react-native-keychain#installation) if you encounter any problems while installing react-native-keychain.
 
 ## How do I use it?
 
@@ -91,7 +69,6 @@ export const axiosInstance = axios.create({ baseURL: BASE_URL })
 
 // 2. Define token refresh function.
 const requestRefresh: TokenRefreshRequest = async (refreshToken: string): Promise<string> => {
-
   // Important! Do NOT use the axios instance that you supplied to applyAuthTokenInterceptor
   // because this will result in an infinite loop when trying to refresh the token.
   // Use the global axios client or a different instance
@@ -120,11 +97,11 @@ const login = async (params: ILoginRequest) => {
   // save tokens to storage
   await setAuthTokens({
     accessToken: response.data.access_token,
-    refreshToken: response.data.refresh_token
+    refreshToken: response.data.refresh_token,
   })
 }
 
-// 5. Log out by clearing the auth tokens from AsyncStorage
+// 5. Log out by clearing the auth tokens from Keychain/Keystore
 const logout = () => clearAuthTokens()
 
 // Check if refresh token exists
@@ -133,17 +110,17 @@ if (isLoggedIn()) {
 }
 
 // Get access to tokens
-const accessToken = getAccessToken().then(accessToken => console.log(accessToken))
-const refreshToken = getRefreshToken().then(refreshToken => console.log(refreshToken))
+const accessToken = getAccessToken().then((accessToken) => console.log(accessToken))
+const refreshToken = getRefreshToken().then((refreshToken) => console.log(refreshToken))
 ```
 
 ## Configuration
 
 ```typescript
 applyAuthTokenInterceptor(axiosInstance, {
-  requestRefresh,  // async function that takes a refreshToken and returns a promise the resolves in a fresh accessToken
-  header = "Authorization",  // header name
-  headerPrefix = "Bearer ",  // header value prefix
+  requestRefresh, // async function that takes a refreshToken and returns a promise the resolves in a fresh accessToken
+  header = 'Authorization', // header name
+  headerPrefix = 'Bearer ', // header value prefix
 })
 ```
 
@@ -156,8 +133,8 @@ applyAuthTokenInterceptor(axiosInstance, {
 ```javascript
 //api.js
 
-import { applyAuthTokenInterceptor } from 'react-native-axios-jwt';
-import axios from 'axios';
+import { applyAuthTokenInterceptor } from 'react-native-axios-jwt'
+import axios from 'axios'
 
 const BASE_URL = 'https://api.example.com'
 
@@ -166,29 +143,24 @@ export const axiosInstance = axios.create({ baseURL: BASE_URL })
 
 // 2. Define token refresh function.
 const requestRefresh = async (refresh) => {
-    // Notice that this is the global axios instance, not the axiosInstance!
-    const response = await axios.post(`${BASE_URL}/auth/refresh_token`, { refresh })
+  // Notice that this is the global axios instance, not the axiosInstance!
+  const response = await axios.post(`${BASE_URL}/auth/refresh_token`, { refresh })
 
-    return response.data.access_token
-};
+  return response.data.access_token
+}
 
 // 3. Apply interceptor
 // Notice that this uses the axiosInstance instance.
-applyAuthTokenInterceptor(axiosInstance, { requestRefresh }); 
+applyAuthTokenInterceptor(axiosInstance, { requestRefresh })
 ```
+
 ### Login/logout
 
 ```javascript
 //login.js
 
-import {
-  isLoggedIn,
-  setAuthTokens,
-  clearAuthTokens,
-  getAccessToken,
-  getRefreshToken,
-} from 'react-native-axios-jwt';
-import { axiosInstance } from '../api';
+import { isLoggedIn, setAuthTokens, clearAuthTokens, getAccessToken, getRefreshToken } from 'react-native-axios-jwt'
+import { axiosInstance } from '../api'
 
 // 4. Log in by POST-ing the email and password and get tokens in return
 // and call setAuthTokens with the result.
@@ -196,13 +168,13 @@ const login = async (params) => {
   const response = await axiosInstance.post('/auth/login', params)
 
   // save tokens to storage
-    await setAuthTokens({
+  await setAuthTokens({
     accessToken: response.data.access_token,
-    refreshToken: response.data.refresh_token
+    refreshToken: response.data.refresh_token,
   })
 }
 
-// 5. Log out by clearing the auth tokens from AsyncStorage
+// 5. Log out by clearing the auth tokens from KeycKeychain/Keystorehain
 const logout = () => clearAuthTokens()
 
 // Check if refresh token exists
@@ -211,11 +183,9 @@ if (isLoggedIn()) {
 }
 
 // Get access to tokens
-const accessToken = getAccessToken().then(accessToken => console.log(accessToken))
-const refreshToken = getRefreshToken().then(refreshToken => console.log(refreshToken))
-
+const accessToken = getAccessToken().then((accessToken) => console.log(accessToken))
+const refreshToken = getRefreshToken().then((refreshToken) => console.log(refreshToken))
 
 // Now just make all requests using your axiosInstance instance
-axiosInstance.get('/api/endpoint/that/requires/login').then(response => { })
-
+axiosInstance.get('/api/endpoint/that/requires/login').then((response) => {})
 ```

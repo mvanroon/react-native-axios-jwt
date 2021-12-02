@@ -1,17 +1,19 @@
 import jwtDecode, { JwtPayload } from 'jwt-decode'
 
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as Keychain from 'react-native-keychain'
+import { getBundleId } from 'react-native-device-info'
 
 // a little time before expiration to try refresh (seconds)
 const EXPIRE_FUDGE = 10
-export const STORAGE_KEY = `auth-tokens-${process.env.NODE_ENV}`
+export const STORAGE_KEY = `${getBundleId()}-refresh-token-${process.env.NODE_ENV}`
 
 type Token = string
 export interface AuthTokens {
   accessToken: Token
   refreshToken: Token
 }
+let accessToken: Token | null = null
 
 // EXPORTS
 
@@ -31,8 +33,20 @@ export const isLoggedIn = async (): Promise<boolean> => {
  * @param {AuthTokens} tokens - Access and Refresh tokens
  * @returns {Promise}
  */
-export const setAuthTokens = (tokens: AuthTokens): Promise<void> =>
-  AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tokens))
+export const setAuthTokens = (tokens: AuthTokens): Promise<void> => {
+  // store accesToken in memory
+  accessToken = tokens.accessToken
+
+  // store refreshToken securely
+  return Keychain.setGenericPassword('refreshToken', tokens.refreshToken, { service: STORAGE_KEY })
+    .then((result) => {
+      if (result) return
+      else throw new Error('Failed to store refresh token')
+    })
+    .catch((error) => {
+      throw error
+    })
+}
 
 /**
  * Sets the access token
@@ -40,13 +54,13 @@ export const setAuthTokens = (tokens: AuthTokens): Promise<void> =>
  * @param {Promise} token - Access token
  */
 export const setAccessToken = async (token: Token): Promise<void> => {
-  const tokens = await getAuthTokens()
-  if (!tokens) {
+  const refreshToken = await getRefreshToken()
+  if (!refreshToken || !accessToken) {
     throw new Error('Unable to update access token since there are not tokens currently stored')
   }
 
-  tokens.accessToken = token
-  return setAuthTokens(tokens)
+  accessToken = token
+  return
 }
 
 /**
@@ -54,7 +68,19 @@ export const setAccessToken = async (token: Token): Promise<void> => {
  * @async
  * @param {Promise}
  */
-export const clearAuthTokens = (): Promise<void> => AsyncStorage.removeItem(STORAGE_KEY)
+export const clearAuthTokens = async (): Promise<void> => {
+  accessToken = null
+  try {
+    const result = await Keychain.resetGenericPassword({ service: STORAGE_KEY })
+    if (result) {
+      return
+    } else {
+      throw new Error('Failed to clear refresh token')
+    }
+  } catch (error) {
+    throw error
+  }
+}
 
 /**
  * Returns the stored refresh token
@@ -62,18 +88,16 @@ export const clearAuthTokens = (): Promise<void> => AsyncStorage.removeItem(STOR
  * @returns {Promise<string>} Refresh token
  */
 export const getRefreshToken = async (): Promise<Token | undefined> => {
-  const tokens = await getAuthTokens()
-  return tokens ? tokens.refreshToken : undefined
+  const credentials = await Keychain.getGenericPassword({ service: STORAGE_KEY })
+  return credentials ? credentials.password : undefined
 }
 
 /**
  * Returns the stored access token
- * @async
  * @returns {Promise<string>} Access token
  */
-export const getAccessToken = async (): Promise<Token | undefined> => {
-  const tokens = await getAuthTokens()
-  return tokens ? tokens.accessToken : undefined
+export const getAccessToken = (): Token | undefined => {
+  return accessToken ?? undefined
 }
 
 /**
@@ -89,9 +113,6 @@ export const getAccessToken = async (): Promise<Token | undefined> => {
  * @returns {Promise<string>} Access token
  */
 export const refreshTokenIfNeeded = async (requestRefresh: TokenRefreshRequest): Promise<Token | undefined> => {
-  // use access token (if we have it)
-  let accessToken = await getAccessToken()
-
   // check if access token is expired
   if (!accessToken || isTokenExpired(accessToken)) {
     // do refresh
@@ -113,23 +134,6 @@ export const applyAuthTokenInterceptor = (axios: AxiosInstance, config: AuthToke
 }
 
 // PRIVATE
-
-/**
- *  Returns the refresh and access tokens
- * @async
- * @returns {Promise<AuthTokens>} Object containing refresh and access tokens
- */
-const getAuthTokens = async (): Promise<AuthTokens | undefined> => {
-  const rawTokens = await AsyncStorage.getItem(STORAGE_KEY)
-  if (!rawTokens) return
-
-  try {
-    // parse stored tokens JSON
-    return JSON.parse(rawTokens)
-  } catch (error) {
-    throw new Error(`Failed to parse auth tokens: ${rawTokens}`)
-  }
-}
 
 /**
  * Checks if the token is undefined, has expired or is about the expire
@@ -198,7 +202,7 @@ const refreshToken = async (requestRefresh: TokenRefreshRequest): Promise<Token>
     const status = error.response?.status
     if (status === 401 || status === 422) {
       // The refresh token is invalid so remove the stored tokens
-      await AsyncStorage.removeItem(STORAGE_KEY)
+      await clearAuthTokens()
       error.message = `Got ${status} on token refresh; clearing both auth tokens`
     }
 
