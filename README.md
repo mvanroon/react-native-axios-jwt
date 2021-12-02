@@ -54,7 +54,7 @@ react-native link react-native-keychain react-native-device-info
 
 Please follow the [react-native-keychain installation instructions](https://github.com/oblador/react-native-keychain#installation) and [react-native-device-info installation instructions](https://github.com/react-native-device-info/react-native-device-info#installation) if you encounter any problems while installing dependencies.
 
-### 2. Install packages
+### 2. Install this library
 
 With npm:
 
