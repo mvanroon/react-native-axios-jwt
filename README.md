@@ -16,7 +16,45 @@ refresh and store a new access token is automatically performed before the reque
 
 ## Installation
 
-### 1. Install package
+### 1. Install required depencies
+
+#### Install packages
+
+With npm:
+
+```bash
+npm install react-native-keychain react-native-device-info
+```
+
+With Yarn:
+
+```bash
+yarn add react-native-keychain react-native-device-info
+```
+
+With Expo CLI:
+
+```bash
+expo install react-native-keychain react-native-device-info
+ ```
+ 
+#### Link Android & iOS packages
+
+- **React Native 0.60+**
+
+```bash
+npx pod-install
+```
+
+- **React Native <= 0.59**
+
+```bash
+react-native link react-native-keychain react-native-device-info
+```
+
+Please follow the [react-native-keychain installation instructions](https://github.com/oblador/react-native-keychain#installation) and [react-native-device-info installation instructions](https://github.com/react-native-device-info/react-native-device-info#installation) if you encounter any problems while installing dependencies.
+
+### 2. Install packages
 
 With npm:
 
@@ -29,22 +67,6 @@ With Yarn:
 ```bash
 yarn add react-native-axios-jwt
 ```
-
-### 2. Link Android & iOS packages
-
-- **React Native 0.60+**
-
-```bash
-npx pod-install
-```
-
-- **React Native <= 0.59**
-
-```bash
-react-native link react-native-keychain
-```
-
-Please follow the [react-native-keychain installation instructions](https://github.com/oblador/react-native-keychain#installation) if you encounter any problems while installing react-native-keychain.
 
 ## How do I use it?
 
