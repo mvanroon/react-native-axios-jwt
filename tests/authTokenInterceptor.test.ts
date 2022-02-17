@@ -35,17 +35,17 @@ describe('authTokenInterceptor', () => {
 
   it('sets the original access token as header if has not yet expired', async () => {
     // GIVEN
-    // I have an access token that expired an hour ago
-    const expiredToken = jwt.sign(
+    // I have an access token that expires in 5 minutes
+    const validToken = jwt.sign(
       {
-        exp: Math.floor(Date.now() / 1000) - 60 * 60,
+        exp: Math.floor(Date.now() / 1000) + 5 * 60,
         data: 'foobar',
       },
       'secret'
     )
 
     // and this token is stored in local storage
-    const tokens = { accessToken: expiredToken, refreshToken: 'refreshtoken' }
+    const tokens = { accessToken: validToken, refreshToken: 'refreshtoken' }
     localStorage.setItem('auth-tokens-test', JSON.stringify(tokens))
 
     // and I have a config defined
@@ -68,16 +68,16 @@ describe('authTokenInterceptor', () => {
     const result = await interceptor(exampleConfig)
 
     // THEN
-    // I expect the result to have an updated header
+    // I expect the result to use the current token
     expect(result).toEqual({
       ...exampleConfig,
       headers: {
-        Auth: 'Prefix newtoken',
+        Auth: `Prefix ${validToken}`,
       },
     })
   })
 
-  it('throws an error if refreshTokenIfNeeded produces one', async () => {
+  it('re-throws an error if refreshTokenIfNeeded throws one', async () => {
     // GIVEN
     // I have an access token that expired an hour ago
     const expiredToken = jwt.sign(
@@ -187,11 +187,8 @@ describe('authTokenInterceptor', () => {
     // and I have a config defined
     const config = {
       requestRefresh: async () => {
-        await new Promise((resolve) => {
-          refreshes++
-          setTimeout(resolve, 100)
-        })
-
+        await new Promise(resolve => setTimeout(resolve, 100))
+        refreshes++
         return 'updatedaccesstoken'
       },
     }
@@ -213,8 +210,63 @@ describe('authTokenInterceptor', () => {
     ])
 
     // THEN
-    // I expect the result to have an updated header
-    expect(results[0].headers).toEqual({ Authorization: 'Bearer updatedaccesstoken' })
+    // I expect all results to use the updated access token
+    for( const result of results) {
+      expect(result.headers).toEqual({ Authorization: 'Bearer updatedaccesstoken' })  
+    }
+
+    // and the number of refreshes to be 1
+    expect(refreshes).toEqual(1)
+  })
+
+  it('decline queued calls when error occurred during token refresh', async () => {
+    // GIVEN
+    // We are counting the number of times a token is being refreshed
+    let refreshes = 0
+
+    // and I have an access token that expired an hour ago
+    const expiredToken = jwt.sign(
+        {
+            exp: Math.floor(Date.now() / 1000) - 60 * 60,
+            data: 'foobar',
+        },
+        'secret'
+    )
+
+    // and this token is stored in local storage
+    const tokens = { accessToken: expiredToken, refreshToken: 'refreshtoken' }
+    localStorage.setItem('auth-tokens-test', JSON.stringify(tokens))
+
+    // and I have a config defined
+    const config = {
+        requestRefresh: async () => {
+            await new Promise(resolve => setTimeout(resolve, 100))
+            refreshes++
+            throw Error("Network Error")
+        },
+    }
+
+    // and I have a request config
+    const exampleConfig: AxiosRequestConfig = {
+        url: 'https://example.com',
+        method: 'POST',
+        headers: {},
+    }
+
+    // WHEN
+    // I create 3 interceptor and call them all at once
+    const interceptor = authTokenInterceptor(config)
+    await expect(
+      Promise.all([
+        interceptor(exampleConfig).catch(error => error.message),
+        interceptor(exampleConfig).catch(error => error.message),
+        interceptor(exampleConfig).catch(error => error.message),
+      ])
+    ).resolves.toEqual([
+      "Unable to refresh access token for request due to token refresh error: Network Error",
+      "Unable to refresh access token for request due to token refresh error: Network Error",
+      "Unable to refresh access token for request due to token refresh error: Network Error",
+    ])
 
     // and the number of refreshes to be 1
     expect(refreshes).toEqual(1)

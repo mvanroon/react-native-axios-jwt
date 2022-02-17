@@ -171,7 +171,7 @@ describe('refreshTokenIfNeeded', () => {
     const result = await refreshTokenIfNeeded(requestRefresh)
 
     // THEN
-    // I expect both the stord tokens to have been updated
+    // I expect both the stored tokens to have been updated
     const storedTokens = localStorage.getItem(STORAGE_KEY) as string
     expect(JSON.parse(storedTokens)).toEqual({ accessToken: 'newaccesstoken', refreshToken: 'newrefreshtoken' })
 
