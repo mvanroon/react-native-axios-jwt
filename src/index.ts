@@ -230,18 +230,16 @@ export const authTokenInterceptor =
     const refreshToken = await getRefreshToken()
     if (!refreshToken) return requestConfig
 
+    const authenticateRequest = (token: string | undefined) => {
+      if (token) requestConfig.headers[header] = `${headerPrefix}${token}`
+      return requestConfig
+    }
+    
     // Queue the request if another refresh request is currently happening
     if (isRefreshing) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve: (token?: string) => void, reject) => {
         queue.push({ resolve, reject })
-      })
-        .then(
-          (token) => {
-            requestConfig.headers[header] = `${headerPrefix}${token}`
-            return requestConfig
-          }
-        )
-        
+      }).then(authenticateRequest)
     }
 
     // Do refresh if needed
@@ -263,12 +261,11 @@ export const authTokenInterceptor =
     resolveQueue(accessToken)
 
     // add token to headers
-    if (accessToken) requestConfig.headers[header] = `${headerPrefix}${accessToken}`
-    return requestConfig
+    return authenticateRequest(accessToken)
   }
 
 type RequestsQueue = {
-  resolve: (value?: unknown) => void
+  resolve: (token?: string) => void
   reject: (reason?: unknown) => void
 }[]
 
