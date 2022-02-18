@@ -52,7 +52,7 @@ export const setAccessToken = async (token: Token): Promise<void> => {
 /**
  * Clears both tokens
  * @async
- * @param {Promise}
+ * @returns {Promise}
  */
 export const clearAuthTokens = (): Promise<void> => AsyncStorage.removeItem(STORAGE_KEY)
 
@@ -79,7 +79,7 @@ export const getAccessToken = async (): Promise<Token | undefined> => {
 /**
  * @callback requestRefresh
  * @param {string} refreshToken - Token that is sent to the backend
- * @returns {Promise} Promise that resolves in an access token
+ * @returns {Promise} Promise that resolves an access token
  */
 
 /**
@@ -104,7 +104,7 @@ export const refreshTokenIfNeeded = async (requestRefresh: TokenRefreshRequest):
 
 /**
  *
- * @param {Axios} axios - Axios instance to apply the interceptor to
+ * @param {axios} axios - Axios instance to apply the interceptor to
  * @param {AuthTokenInterceptorConfig} config - Configuration for the interceptor
  */
 export const applyAuthTokenInterceptor = (axios: AxiosInstance, config: AuthTokenInterceptorConfig): void => {
@@ -132,10 +132,10 @@ const getAuthTokens = async (): Promise<AuthTokens | undefined> => {
 }
 
 /**
- * Checks if the token is undefined, has expired or is about the expire
+ * Checks if the token is undefined, has expired or is about to expire
  *
  * @param {string} token - Access token
- * @returns {boolean} Whether or not the token is undefined, has expired or is about the expire
+ * @returns {boolean} Whether or not the token is undefined, has expired or is about to expire
  */
 const isTokenExpired = (token: Token): boolean => {
   if (!token) return true
@@ -144,7 +144,7 @@ const isTokenExpired = (token: Token): boolean => {
 }
 
 /**
- * Gets the unix timestamp from an access token
+ * Gets the unix timestamp from the JWT access token
  *
  * @param {string} token - Access token
  * @returns {string} Unix timestamp
@@ -189,8 +189,6 @@ const refreshToken = async (requestRefresh: TokenRefreshRequest): Promise<Token>
       await setAccessToken(newTokens)
       return newTokens
     }
-
-    throw new Error('requestRefresh must either return a string or an object with an accessToken')
   } catch (error) {
     if (!axios.isAxiosError(error)) throw error
 
@@ -204,6 +202,8 @@ const refreshToken = async (requestRefresh: TokenRefreshRequest): Promise<Token>
 
     throw error
   }
+
+  throw new Error('requestRefresh must either return a string or an object with an accessToken')
 }
 
 export type TokenRefreshRequest = (refreshToken: string) => Promise<Token | AuthTokens>
@@ -215,7 +215,7 @@ export interface AuthTokenInterceptorConfig {
 }
 
 /**
- * Function that returns an Axios Intercepter that:
+ * Function that returns an Axios Interceptor that:
  * - Applies that right auth header to requests
  * - Refreshes the access token when needed
  * - Puts subsequent requests in a queue and executes them in order after the access token has been refreshed.
@@ -230,16 +230,16 @@ export const authTokenInterceptor =
     const refreshToken = await getRefreshToken()
     if (!refreshToken) return requestConfig
 
+    const authenticateRequest = (token: string | undefined) => {
+      if (token) requestConfig.headers[header] = `${headerPrefix}${token}`
+      return requestConfig
+    }
+
     // Queue the request if another refresh request is currently happening
     if (isRefreshing) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve: (token?: string) => void, reject) => {
         queue.push({ resolve, reject })
-      })
-        .then((token) => {
-          requestConfig.headers[header] = `${headerPrefix}${token}`
-          return requestConfig
-        })
-        .catch(Promise.reject)
+      }).then(authenticateRequest)
     }
 
     // Do refresh if needed
@@ -247,7 +247,6 @@ export const authTokenInterceptor =
     try {
       isRefreshing = true
       accessToken = await refreshTokenIfNeeded(requestRefresh)
-      resolveQueue(accessToken)
     } catch (error) {
       declineQueue(error as Error)
 
@@ -259,37 +258,19 @@ export const authTokenInterceptor =
     } finally {
       isRefreshing = false
     }
+    resolveQueue(accessToken)
 
     // add token to headers
-    if (accessToken) requestConfig.headers[header] = `${headerPrefix}${accessToken}`
-    return requestConfig
+    return authenticateRequest(accessToken)
   }
 
 type RequestsQueue = {
-  resolve: (value?: unknown) => void
+  resolve: (token?: string) => void
   reject: (reason?: unknown) => void
 }[]
 
 let isRefreshing = false
 let queue: RequestsQueue = []
-
-/**
- * Check if tokens are currently being refreshed
- *
- * @returns {boolean} True if the tokens are currently being refreshed, false is not
- */
-export function getIsRefreshing(): boolean {
-  return isRefreshing
-}
-
-/**
- * Update refresh state
- *
- * @param {boolean} newRefreshingState
- */
-export function setIsRefreshing(newRefreshingState: boolean): void {
-  isRefreshing = newRefreshingState
-}
 
 /**
  * Function that resolves all items in the queue with the provided token
