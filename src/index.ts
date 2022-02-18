@@ -223,48 +223,46 @@ export interface AuthTokenInterceptorConfig {
  * @param {AuthTokenInterceptorConfig} config - Configuration for the interceptor
  * @returns {Promise<AxiosRequestConfig} Promise that resolves in the supplied requestConfig
  */
-export const authTokenInterceptor = ({
-  header = 'Authorization',
-  headerPrefix = 'Bearer ',
-  requestRefresh,
-}: AuthTokenInterceptorConfig) => async (requestConfig: AxiosRequestConfig): Promise<AxiosRequestConfig> => {
-  // We need refresh token to do any authenticated requests
-  const refreshToken = await getRefreshToken()
-  if (!refreshToken) return requestConfig
+export const authTokenInterceptor =
+  ({ header = 'Authorization', headerPrefix = 'Bearer ', requestRefresh }: AuthTokenInterceptorConfig) =>
+  async (requestConfig: AxiosRequestConfig): Promise<AxiosRequestConfig> => {
+    // We need refresh token to do any authenticated requests
+    const refreshToken = await getRefreshToken()
+    if (!refreshToken) return requestConfig
 
-  const authenticateRequest = (token: string | undefined) => {
-    if (token) requestConfig.headers[header] = `${headerPrefix}${token}`
-    return requestConfig
-  }
-
-  // Queue the request if another refresh request is currently happening
-  if (isRefreshing) {
-    return new Promise((resolve: (token?: string) => void, reject) => {
-      queue.push({ resolve, reject })
-    }).then(authenticateRequest)
-  }
-
-  // Do refresh if needed
-  let accessToken
-  try {
-    isRefreshing = true
-    accessToken = await refreshTokenIfNeeded(requestRefresh)
-  } catch (error) {
-    declineQueue(error as Error)
-
-    if (error instanceof Error) {
-      error.message = `Unable to refresh access token for request due to token refresh error: ${error.message}`
+    const authenticateRequest = (token: string | undefined) => {
+      if (token) requestConfig.headers[header] = `${headerPrefix}${token}`
+      return requestConfig
     }
 
-    throw error
-  } finally {
-    isRefreshing = false
-  }
-  resolveQueue(accessToken)
+    // Queue the request if another refresh request is currently happening
+    if (isRefreshing) {
+      return new Promise((resolve: (token?: string) => void, reject) => {
+        queue.push({ resolve, reject })
+      }).then(authenticateRequest)
+    }
 
-  // add token to headers
-  return authenticateRequest(accessToken)
-}
+    // Do refresh if needed
+    let accessToken
+    try {
+      isRefreshing = true
+      accessToken = await refreshTokenIfNeeded(requestRefresh)
+    } catch (error) {
+      declineQueue(error as Error)
+
+      if (error instanceof Error) {
+        error.message = `Unable to refresh access token for request due to token refresh error: ${error.message}`
+      }
+
+      throw error
+    } finally {
+      isRefreshing = false
+    }
+    resolveQueue(accessToken)
+
+    // add token to headers
+    return authenticateRequest(accessToken)
+  }
 
 type RequestsQueue = {
   resolve: (token?: string) => void
