@@ -273,6 +273,24 @@ let isRefreshing = false
 let queue: RequestsQueue = []
 
 /**
+ * Check if tokens are currently being refreshed
+ *
+ * @returns {boolean} True if the tokens are currently being refreshed, false is not
+ */
+export function getIsRefreshing(): boolean {
+  return isRefreshing
+}
+
+/**
+ * Update refresh state
+ *
+ * @param {boolean} newRefreshingState
+ */
+export function setIsRefreshing(newRefreshingState: boolean): void {
+  isRefreshing = newRefreshingState
+}
+
+/**
  * Function that resolves all items in the queue with the provided token
  * @param token New access token
  */
