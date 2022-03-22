@@ -165,6 +165,10 @@ const getExpiresIn = (token: Token): number => {
   const expiration = getTimestampFromToken(token)
 
   if (!expiration) return -1
+  
+  if (expiration > 1000000000000 ) {
+    return expiration - Date.now() ;
+  }
 
   return expiration - Date.now() / 1000
 }
