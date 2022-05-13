@@ -95,7 +95,6 @@ export const refreshTokenIfNeeded = async (requestRefresh: TokenRefreshRequest):
   // check if access token is expired
   if (!accessToken || isTokenExpired(accessToken)) {
     // do refresh
-
     accessToken = await refreshToken(requestRefresh)
   }
 
@@ -231,7 +230,10 @@ export const authTokenInterceptor =
     if (!refreshToken) return requestConfig
 
     const authenticateRequest = (token: string | undefined) => {
-      if (token) requestConfig.headers[header] = `${headerPrefix}${token}`
+      if (token) {
+        requestConfig.headers = requestConfig.headers ?? {}
+        requestConfig.headers[header] = `${headerPrefix}${token}`
+      }
       return requestConfig
     }
 
@@ -245,7 +247,7 @@ export const authTokenInterceptor =
     // Do refresh if needed
     let accessToken
     try {
-      isRefreshing = true
+      setIsRefreshing(true)
       accessToken = await refreshTokenIfNeeded(requestRefresh)
     } catch (error) {
       declineQueue(error as Error)
@@ -256,7 +258,7 @@ export const authTokenInterceptor =
 
       throw error
     } finally {
-      isRefreshing = false
+      setIsRefreshing(false)
     }
     resolveQueue(accessToken)
 
