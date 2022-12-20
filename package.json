@@ -1,6 +1,6 @@
 {
   "name": "react-native-axios-jwt",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "description": "Axios interceptor to store, transmit, clear and automatically refresh tokens for authentication in a React Native environment",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
