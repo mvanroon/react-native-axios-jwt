@@ -28,8 +28,8 @@
     "typescript": "^4.4.4"
   },
   "peerDependencies": {
-    "@react-native-async-storage/async-storage": "^1.13.2",
-    "axios": "~0"
+    "@react-native-async-storage/async-storage": "*",
+    "axios": "*"
   },
   "dependencies": {
     "jwt-decode": "^3.1.2"
